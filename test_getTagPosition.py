@@ -1,7 +1,9 @@
-import serial.tools.list_ports
+from serial import Serial
+import serial.tools.list_ports as list_ports
 from collections import deque
 # from Uwb_util import (Get_ALLCom,ReadData,ReadTagData,DistanceData,PredictBirch,PredictKMeans)
-from uwb_util import UWBUtil, UWB
+from uwb import UWB
+from uwb_util import UWBUtil
 
 
 # メイン関数
@@ -11,10 +13,12 @@ def TAG_main(
         ):
     while True:
         # 接続されている全てのシリアルポートを取得してるっぽい
-        for port in uwbUtil.getAllSerialList():
+        uwb_serial: Serial = uwbUtil.getUwbSerialComPort()
+        tmp_dict = uwbUtil.getTagData(uwb_serial=uwb_serial) if uwb_serial != None else None
+        for uwb_serial in uwbUtil.getUwbSerialComPort:
             # タグデータの読み込み
             # データのアップデート
-            tmp_dict = uwbUtil.getTagData()
+            tmp_dict = uwbUtil.getTagData(uwb_serial=uwb_serial)
             # pass
 
 
