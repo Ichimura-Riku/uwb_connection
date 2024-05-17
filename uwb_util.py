@@ -5,16 +5,6 @@ import serial.tools.list_ports as list_ports
 import re
 import os
 
-# これはデータクラスと考える
-class UWB:
-    def __init__(self, anc_id, tag_id):
-        self.anc_id = anc_id
-        self.tag_id = tag_id
-        self.distance = None
-
-    def GetRangeData(self,result_dict):
-        self.distance = result_dict["Range_data"]
-
 # ここはリポジトリクラスと考えたほうが良さそう
 # ここで実装するクラスはそのまま値を返すだけのクラスにする
 # 値の保持はしない
@@ -31,7 +21,7 @@ class UWBUtil:
         # self._getAllCom_try1()
         pass
 
-    # private! 全てのCOMポートを取得
+    # 全てのCOMポートを取得
     def getAllSerialComPort(self) -> list | None:
         port_list = list_ports.comports()
         comport_list = []
@@ -52,7 +42,7 @@ class UWBUtil:
             return comport_list
 
 
-    # private!別のcomポート取得方法
+    # 別のcomポート取得方法
     def getUwbSerialComPort(self) -> Serial | None:
         uwb_serial = Serial()
         uwb_serial.baudrate = 115200
@@ -77,7 +67,7 @@ class UWBUtil:
         #print("result:",result)
         return result
 
-    def splitRawData(self, hex_data):
+    def _splitRawData(self, hex_data):
     # 16進数文字列を2バイトずつに分割する
         try:
             split_data = [hex_data[i:i+2] for i in range(0, len(hex_data), 2)]
@@ -86,7 +76,7 @@ class UWBUtil:
             #split_data =
         return split_data
 
-    def getUwbDataTAG(self, raw_data):
+    def _getUwbDataTAG(self, raw_data):
         result_dict = {"Anker_id":None,
                     "Tag_id": None,
                     "Range_data":None}
@@ -108,7 +98,7 @@ class UWBUtil:
         result_dict["Range_data"] = range_data
 
         return result_dict
-    def getRangedata(self, raw_range):
+    def _getRangedata(self, raw_range):
         data = "".join(raw_range)
         # ヘキサデシマル文字列をバイト列に変換
         binary_data = bytes.fromhex(data)
