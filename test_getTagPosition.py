@@ -14,7 +14,8 @@ def TAG_main(
         for port in uwbUtil.getAllSerialList():
             # タグデータの読み込み
             # データのアップデート
-            pass
+            tmp_dict = uwbUtil.getTagData()
+            # pass
 
 
 

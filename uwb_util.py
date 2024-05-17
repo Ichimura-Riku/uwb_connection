@@ -1,4 +1,5 @@
 # import serial
+import struct
 from serial import Serial
 import serial.tools.list_ports as list_ports
 import re
@@ -30,13 +31,8 @@ class UWBUtil:
         # self._getAllCom_try1()
         pass
 
-    # public! 全てのCOMポートを持つ配列を返す
-    def getAllSerialList(self) -> list:
-        self._Get_ALLCom()
-        return self.comport_list
-
     # private! 全てのCOMポートを取得
-    def getAllCom(self) -> list | None:
+    def getAllSerialComPort(self) -> list | None:
         port_list = list_ports.comports()
         comport_list = []
         if len(port_list) <= 0:
@@ -57,7 +53,7 @@ class UWBUtil:
 
 
     # private!別のcomポート取得方法
-    def getUwbCom(self) -> Serial | None:
+    def getUwbSerialComPort(self) -> Serial | None:
         uwb_serial = Serial()
         uwb_serial.baudrate = 115200
         all_ports = os.listdir('/dev')
@@ -73,54 +69,63 @@ class UWBUtil:
             print("no port")
             return None
 
+    # TagをPCに接続して使用する場合
+    def getTagData(self, uwb_serial : Serial) -> dict:
+        hex_data = str(uwb_serial.readline().hex())
+        raw_result = self.splitRawData(hex_data=hex_data)
+        result = self.getUwbDataTAG(raw_data=raw_result)
+        #print("result:",result)
+        return result
 
-    # def Get_UWBdataANC(input_string):
-    #     data_dict = {}
-    #     # キーと値を抽出して辞書に保存する
-    #     pattern = re.compile(r'([^=,]+):([^=,]+)')
-    #     matches = pattern.findall(input_string)
-    #     for match in matches:
-    #         key = match[0].strip()
-    #         value = match[1].strip()
-    #         # 値が "(...)" の形式であれば、括弧内のデータのみを抽出
-    #         if key == "range" or key == "rssi":
-    #             value = Pattern_RangeRssi(key=key, input_string=input_string)
-    #         data_dict[key] = value
-    #     return data_dict
+    def splitRawData(self, hex_data):
+    # 16進数文字列を2バイトずつに分割する
+        try:
+            split_data = [hex_data[i:i+2] for i in range(0, len(hex_data), 2)]
+        except:
+            print("error")
+            #split_data =
+        return split_data
 
-    #選択したUWBアンカーからデータを取得
-    # 今回はtagだけ使う予定なので必要ない
-    # def ReadDataByAnchor(self, port: Serial):
-    #     # try:
-    #         #for _serial in serial_list:
-    #         line = port.readline().decode('UTF-8').replace('\n', '')
+    def getUwbDataTAG(self, raw_data):
+        result_dict = {"Anker_id":None,
+                    "Tag_id": None,
+                    "Range_data":None}
+        #print(raw_data)
+        anc_data = bytes.fromhex(raw_data[0])
+        decoded_string = anc_data.decode('utf-8')
 
-    #         # uwbアンカーからデータを取得する
+        if decoded_string == "A":
+            result_dict["Anker_id"] = 0
+        elif decoded_string == "B":
+            result_dict["Anker_id"] = 1
+        elif decoded_string == "C":
+            result_dict["Anker_id"] = 2
+        try:
+            result_dict["Tag_id"] = int(int(raw_data[1]))
+        except:
+            result_dict["Tag_id"] = "?"
+        range_data = self.getRangedata(raw_data[3:-1])
+        result_dict["Range_data"] = range_data
 
+        return result_dict
+    def getRangedata(self, raw_range):
+        data = "".join(raw_range)
+        # ヘキサデシマル文字列をバイト列に変換
+        binary_data = bytes.fromhex(data)
+        try:
+        # 'f'は32ビットの浮動小数点数を表すフォーマット文字
+            decimal_number = struct.unpack('<f', binary_data)[0]
+        except:
+            decimal_number = 0.0
 
-    #         '--------------------ここまでやってる--------------------------'
-        #     result = Get_UWBdataANC(line)
-        #     Set_UWBdataANC(result)
-
-        #     if result != {}:
-        #         print("result:",line)
-        #     elif result == {}:
-        #         print("[LOG]:",line)
-        #     print(type(line))
-        # except Exception as e:
-        #     print(e.args)
-        #     pass
-    #TagをPCに接続して使用する場合
-    # def getTagData(ser : Serial) -> dict:
-    #     line = str(ser.readline().hex())
-    #     raw_result = Split_RawData(line)
-    #     result = Get_UWBdataTAG(raw_data=raw_result)
-    #     #print("result:",result)
-    #     return result
-
+        value = "{:.4f}".format(decimal_number)
+        return value
 
 
 
 if __name__ == '__main__':
     uwbUtil = UWBUtil()
-    print(uwbUtil.getAllCom())
+    uwb_serial = uwbUtil.getUwbSerialComPort()
+    while True:
+        print(uwbUtil.getTagData(uwb_serial=uwb_serial))
+
