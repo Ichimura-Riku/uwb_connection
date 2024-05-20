@@ -7,19 +7,14 @@ from uwb_util import UwbUtil
 
 
 # メイン関数
-def TAG_main(
-        uwbUtil: UwbUtil
-        ):
+def TAG_main(uwbUtil: UwbUtil):
     while True:
         # 接続されている全てのシリアルポートを取得してるっぽい
         uwb_serial: Serial = uwbUtil.getUwbSerialComPort()
         # タグデータの読み込みとデータの更新
         tag_data = uwbUtil.getTagData(uwb_serial = uwb_serial) if uwb_serial != None else None
         # print(tag_data)
-
-
-
-
+        
 
 
 
