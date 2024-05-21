@@ -1,8 +1,10 @@
 import struct
 from serial import Serial
 import serial.tools.list_ports as list_ports
+import serial.tools.list_ports_common as list_ports_common
 from uwb import UwbData
 import os
+import platform
 
 # ここはリポジトリクラスと考えたほうが良さそう
 # ここで実装するクラスはそのまま値を返すだけのクラスにする
@@ -35,23 +37,43 @@ class UwbUtil:
 
 
     # 全てのCOMポートを取得
-    def getAllSerialComPort(self) -> list | None:
-        port_list = list_ports.comports()
+    # macの場合は"SLAB_USBtoUART"を取得する
+    def getAllSerialComPort(self) -> list[Serial] | None:
+        port_list: list[list_ports_common.ListPortInfo] = list_ports.comports()
         comport_list = []
         if len(port_list) <= 0:
             print("No COM")
             return None
         else:
-            print("ALL COM")
-            for port in port_list:
-                print("port:",list(port)[0])
-                uwb_serial = Serial()
-                uwb_serial.port = list(port)[0]
-                uwb_serial.baudrate = 115200
-                comport_list.append(uwb_serial)
-                # この書き方だとエラーが出るので、コメントアウト
-                # ser = Serial(list(port)[0], 115200)
-                # comport_list.append(ser)
+            if platform.system() == "Darwin":
+                all_port_by_os: list[str] =  os.listdir('/dev')
+                all_tty_port = [port for port in all_port_by_os if "cu.SLAB_USBtoUART" in port]
+
+                if len(all_port_by_os) > 0:
+                    # 取得したポートの確認
+                    print("ALL COM")
+                    [print(port_by_os) for port_by_os in all_tty_port]
+                    for port in all_tty_port:
+                        uwb_serial = Serial()
+                        uwb_serial.baudrate = 115200
+                        uwb_serial.port = '/dev/'+ port
+                        uwb_serial.open()
+                        comport_list.append(uwb_serial)
+                else :
+                    print("no port")
+                    return None
+            # macosじゃないとき
+            else:
+                print("ALL COM")
+                for port in port_list:
+                    print("port:",port.name)
+                    # os差分でエラーが出ることがあるので、try文で囲む
+                    try:
+                        ser = Serial("/dev/" + str(port.name), 115200)
+                        comport_list.append(ser)
+                    except Exception as e:
+                        print("error:", e)
+
             return comport_list
 
 
@@ -59,7 +81,7 @@ class UwbUtil:
     def getUwbSerialComPort(self) -> Serial | None:
         uwb_serial = Serial()
         uwb_serial.baudrate = 115200
-        all_ports = os.listdir('/dev')
+        all_ports: list[str] = os.listdir('/dev')
         if "cu.SLAB_USBtoUART" in all_ports:
             # port_index : int = all_ports.index("cu.SLAB_USBtoUART")
             # print(port_index)

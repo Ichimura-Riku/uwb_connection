@@ -8,14 +8,20 @@ from uwb_util import UwbUtil
 
 # メイン関数
 def TAG_main(uwbUtil: UwbUtil):
+    # 接続されている全てのシリアルポートを取得してるっぽい
+    all_uwb_serial: list[Serial] = [uwbUtil.getUwbSerialComPort()]
+
+    # 複数の場合
+    # all_uwb_serial: list[Serial] = uwbUtil.getAllSerialComPort()
+    # [print(uwb_serial.name) for uwb_serial in all_uwb_serial]
+
     while True:
-        # 接続されている全てのシリアルポートを取得してるっぽい
-        uwb_serial: Serial = uwbUtil.getUwbSerialComPort()
-        # タグデータの読み込みとデータの更新
-        uwbUtil.setTagData(uwb_serial = uwb_serial) if uwb_serial != None else None
-        
-        # 複数の場合
-        # [uwbUtil.setTagData(uwb_serial = uwb_serial) if uwb_serial != None else None for uwb_serial in uwbUtil.getAllSerialComPort()]
+
+        # それぞれのポートから取得した情報をuwbUtil.setTagDataを実行してuwbStateにセットしていく
+        [uwbUtil.setTagData(uwb_serial = uwb_serial) for uwb_serial in all_uwb_serial if uwb_serial != None]
+
+
+        # 出力
         print("----------------------------------------")
         for uwbData_instance_i in uwbUtil.uwbState.uwbData_instance_list:
             uwbData_instance: UwbData = uwbData_instance_i
