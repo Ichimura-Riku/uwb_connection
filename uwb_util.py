@@ -1,7 +1,7 @@
 import struct
 from serial import Serial
 import serial.tools.list_ports as list_ports
-import re
+from uwb import UwbData
 import os
 
 # ここはリポジトリクラスと考えたほうが良さそう
@@ -20,7 +20,6 @@ class UwbState:
                 instance.distance = tag_data["Range_data"]
 
 class UwbUtil:
-
 
     # 初期化
     def __init__(self, uwb_tag_map: list[dict]) -> None:
@@ -73,17 +72,17 @@ class UwbUtil:
             return None
 
     # TagをPCに接続して使用する場合
-    def getTagData(self, uwb_serial : Serial) -> dict:
+    def setTagData(self, uwb_serial : Serial) :
         hex_data: str = str(uwb_serial.readline().hex())
 
         print(hex_data)
-        raw_result: list[str] = self._splitRawData(hex_data=hex_data)
-        tag_data: dict[str, None] = self._getUwbDataTAG(raw_data=raw_result)
+        raw_result: list[str] = self.__splitRawData(hex_data=hex_data)
+        tag_data: dict[str, None] = self.__getUwbDataTAG(raw_data=raw_result)
         #print("tag_data:",tag_data)
-        self.updateData(tag_data=tag_data)
-        return tag_data
+        self.uwbState.setRangeData(tag_data)
 
-    def _splitRawData(self, hex_data: str) -> list[str]:
+
+    def __splitRawData(self, hex_data: str) -> list[str]:
     # 16進数文字列を2バイトずつに分割する
         try:
             split_data = [hex_data[i:i+2] for i in range(0, len(hex_data), 2)]
@@ -92,13 +91,17 @@ class UwbUtil:
             #split_data =
         return split_data
 
-    def _getUwbDataTAG(self, raw_data: list[str]):
+    def __getUwbDataTAG(self, raw_data: list[str]) -> dict:
         result_dict = {"Anchor_id":None,
                     "Tag_id": None,
                     "Range_data":None}
         #print(raw_data)
-        anc_data = bytes.fromhex(raw_data[0])
-        decoded_string = anc_data.decode('utf-8')
+        try:
+            anc_data = bytes.fromhex(raw_data[0])
+            decoded_string = anc_data.decode('utf-8')
+        except Exception as e:
+            print(e)
+            decoded_string = "?"
         # print(decoded_string)
 
         if decoded_string == "A":
@@ -111,11 +114,11 @@ class UwbUtil:
             result_dict["Tag_id"] = int(int(raw_data[1]))
         except:
             result_dict["Tag_id"] = "?"
-        range_data: str = self._getRangeData(raw_range=raw_data[3:-1])
+        range_data: str = self.__getRangeData(raw_range=raw_data[3:-1])
         result_dict["Range_data"] = range_data
 
         return result_dict
-    def _getRangeData(self, raw_range: list[str]):
+    def __getRangeData(self, raw_range: list[str]):
         data = "".join(raw_range)
         # ヘキサデシマル文字列をバイト列に変換
         binary_data = bytes.fromhex(data)
@@ -130,21 +133,9 @@ class UwbUtil:
 
     # 各UWBインスタンスのtag_data(距離データ)を更新
     # こいつはgetTagData()内の最後で直接呼び出していい説がある
-    def updateData(self, tag_data: dict ):
-        self.uwbState.setRangeData(tag_data)
-        # instance.setRangeData(tag_data)
 
 
-from uwb import UwbData
-if __name__ == '__main__':
-    UWB_DATA = [{"anc":0,"tag":1},{"anc":1,"tag":1},{"anc":2,"tag":1}]
-    uwb_instance_list : list = [UwbData(uwb["anc"], uwb["tag"]) for uwb in UWB_DATA]
-    uwbUtil = UwbUtil(uwb_tag_map=UWB_DATA)
-    uwb_serial = uwbUtil.getUwbSerialComPort()
-    while True:
-        tag_data: dict = uwbUtil.getTagData(uwb_serial=uwb_serial)
-        # print(tag_data)
-        uwbUtil.updateData(tag_data=tag_data, instance_list=uwb_instance_list)
+
 
 
 

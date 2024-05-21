@@ -7,17 +7,17 @@ from uwb_util import UwbUtil
 
 
 # メイン関数
-def TAG_main(
-        uwbUtil: UwbUtil
-        ):
+def TAG_main(uwbUtil: UwbUtil):
     while True:
         # 接続されている全てのシリアルポートを取得してるっぽい
         uwb_serial: Serial = uwbUtil.getUwbSerialComPort()
         # タグデータの読み込みとデータの更新
-        tag_data = uwbUtil.getTagData(uwb_serial = uwb_serial) if uwb_serial != None else None
-        # print(tag_data)
-
-
+        uwbUtil.setTagData(uwb_serial = uwb_serial) if uwb_serial != None else None
+        print("----------------------------------------")
+        for uwbData_instance_i in uwbUtil.uwbState.uwbData_instance_list:
+            uwbData_instance: UwbData = uwbData_instance_i
+            print(f"tag: {uwbData_instance.tag_id}, anc: {uwbData_instance.anc_id}" , uwbData_instance.distance)
+        print("----------------------------------------")
 
 
 
@@ -26,7 +26,7 @@ def TAG_main(
 
 if __name__ == '__main__':
     # 今はtag1だけ使うので、tag1だけにする
-    uwb_tag_map: list[dict]= [{"anc":0,"tag":1},{"anc":1,"tag":1},{"anc":2,"tag":1}]
+    uwb_tag_map: list[dict]= [{"anc":0,"tag":2},{"anc":1,"tag":2},{"anc":2,"tag":2}]
     # queueの最大長を60に設定。これは必要ないと思っている。
     # max_queue_length: int = 60
     #uwbのインスタンスを配列で格納。
