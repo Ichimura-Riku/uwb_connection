@@ -13,6 +13,9 @@ def TAG_main(uwbUtil: UwbUtil):
         uwb_serial: Serial = uwbUtil.getUwbSerialComPort()
         # タグデータの読み込みとデータの更新
         uwbUtil.setTagData(uwb_serial = uwb_serial) if uwb_serial != None else None
+        
+        # 複数の場合
+        # [uwbUtil.setTagData(uwb_serial = uwb_serial) if uwb_serial != None else None for uwb_serial in uwbUtil.getAllSerialComPort()]
         print("----------------------------------------")
         for uwbData_instance_i in uwbUtil.uwbState.uwbData_instance_list:
             uwbData_instance: UwbData = uwbData_instance_i
